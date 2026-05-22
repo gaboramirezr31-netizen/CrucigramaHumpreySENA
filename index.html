@@ -45,6 +45,7 @@
         .subtitle {
             font-style: italic;
             color: #555;
+            line-height: 1.4;
         }
 
         .game-container {
@@ -57,7 +58,7 @@
             flex-wrap: wrap;
         }
 
-        /* El Crucigrama */
+        /* Contenedor del Crucigrama */
         .crossword-container {
             display: grid;
             grid-template-columns: repeat(12, var(--cell-size));
@@ -110,7 +111,7 @@
             z-index: 10;
         }
 
-        /* Correcciones de respuestas */
+        /* Estados de validación */
         .cell.correct input {
             background-color: #c8e6c9 !important;
             color: #256029;
@@ -121,7 +122,7 @@
             color: #c62828;
         }
 
-        /* Pistas */
+        /* Sección de Pistas */
         .clues-container {
             flex: 1;
             min-width: 300px;
@@ -140,6 +141,7 @@
             border-bottom: 2px solid var(--secondary-color);
             padding-bottom: 5px;
             color: var(--secondary-color);
+            margin-top: 0;
         }
 
         .clue-item {
@@ -148,7 +150,7 @@
             line-height: 1.4;
         }
 
-        /* Controles y Resultados */
+        /* Botones y Área de control */
         .controls {
             margin-top: 20px;
             display: flex;
@@ -241,8 +243,8 @@
             <div class="clues-section">
                 <h3>Pistas Verticales</h3>
                 <div class="clue-item"><strong>6.</strong> Acción de recobrar el control de uno mismo y restablecer el equilibrio tras el peligro.</div>
-                <div class="clue-item"><strong>7.</strong> Fuerza constante que actúa sobre el cuerpo, considerada por Humphrey como “amiga o enemiga”.</div>
-                <div class="clue-item"><strong>8.</strong> Flujo de movimiento secuencial que recorre el cuerpo, como el que viaja a través de las vértebras.</div>
+                <div class="clue-item"><strong>7.</strong> Fuerza constante que actúa sobre el cuerpo, considerada por Humphrey como "amiga o enemiga".</div>
+                <div class="clue-item"><strong>8.</strong> Flujo de movimiento secuencial que recorre el cuerpo, como el que viaja a través de las raíces vertebrales.</div>
                 <div class="clue-item"><strong>9.</strong> Ideal que representa el punto más alto de la vertical, la perfección y el máximo control.</div>
                 <div class="clue-item"><strong>10.</strong> Ideal vinculado al abandono del peso, el nivel bajo y la búsqueda del peligro.</div>
             </div>
@@ -261,122 +263,119 @@
     </footer>
 
     <script>
-        // Dimensiones de la matriz recalculada para encajar perfectamente
+        // Dimensiones exactas de la cuadrícula corregida
         const rows = 11;
         const cols = 12;
 
-        // Definición exacta de las palabras con sus coordenadas de inicio, dirección y número de pista
+        // Base de datos de palabras e intersecciones mapeadas matemáticamente
         const words = [
-            // HORIZONTALES
-            { word: "ARCO", r: 1, c: 2, dir: "H", num: 1 },
-            { word: "RESPIRACION", r: 3, c: 0, dir: "H", num: 2 },
-            { word: "OPOSICION", r: 5, c: 2, dir: "H", num: 3 },
-            { word: "CAIDA", r: 7, c: 4, dir: "H", num: 4 },
-            { word: "RITMO", r: 9, c: 5, dir: "H", num: 5 },
-            // VERTICALES
-            { word: "RECUPERACION", r: 0, c: 5, dir: "V", num: 6 },
-            { word: "GRAVEDAD", r: 2, c: 2, dir: "V", num: 7 },
-            { word: "SUCESION", r: 2, c: 8, dir: "V", num: 8 },
-            { word: "APOLINEO", r: 0, c: 10, dir: "V", num: 9 },
-            { word: "DIONISIACO", r: 1, c: 0, dir: "V", num: 10 }
+            { word: 'ARCO', r: 1, c: 2, dir: 'H', num: 1 },
+            { word: 'RESPIRACION', r: 3, c: 0, dir: 'H', num: 2 },
+            { word: 'OPOSICION', r: 5, c: 2, dir: 'H', num: 3 },
+            { word: 'CAIDA', r: 7, c: 4, dir: 'H', num: 4 },
+            { word: 'RITMO', r: 9, c: 5, dir: 'H', num: 5 },
+            { word: 'RECUPERACION', r: 0, c: 5, dir: 'V', num: 6 },
+            { word: 'GRAVEDAD', r: 2, c: 2, dir: 'V', num: 7 },
+            { word: 'SUCESION', r: 2, c: 8, dir: 'V', num: 8 },
+            { word: 'APOLINEO', r: 0, c: 10, dir: 'V', num: 9 },
+            { word: 'DIONISIACO', r: 1, c: 0, dir: 'V', num: 10 }
         ];
 
-        // Creación del mapa de celdas activas
-        let gridData = Array(rows).fill(null).map(() => Array(cols).fill(null));
+        // Estructura de datos lógica para la rejilla
+        let gridData = Array(rows).fill(null).map(function() {
+            return Array(cols).fill(null);
+        });
 
-        words.forEach(w => {
+        // Construir mapa de celdas
+        words.forEach(function(w) {
             let curRow = w.r;
             let curCol = w.c;
             for (let i = 0; i < w.word.length; i++) {
                 if (!gridData[curRow][curCol]) {
-                    gridData[curRow][curCol] = { letter: w.word[i], numbers: [], id: `${curRow}-${curCol}` };
+                    gridData[curRow][curCol] = { letter: w.word[i], numbers: [] };
                 }
                 if (i === 0) {
                     gridData[curRow][curCol].numbers.push(w.num);
                 }
-                if (w.dir === "H") curCol++;
+                if (w.dir === 'H') curCol++;
                 else curRow++;
             }
         });
 
-        // Renderizar la cuadrícula en HTML
-        const gridContainer = document.getElementById('grid');
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const cellDiv = document.createElement('div');
-                cellDiv.classList.add('cell');
+        // Aseguramos que el DOM exista antes de intentar pintar las celdas
+        document.addEventListener('DOMContentLoaded', function() {
+            const gridContainer = document.getElementById('grid');
+            if (!gridContainer) return;
 
-                if (gridData[r][c]) {
-                    cellDiv.classList.add('active');
-                    
-                    // Si la celda inicia una palabra, poner el número indicador
-                    if (gridData[r][c].numbers.length > 0) {
-                        const numSpan = document.createElement('span');
-                        numSpan.classList.add('number');
-                        numSpan.innerText = gridData[r][c].numbers.join('/');
-                        cellDiv.appendChild(numSpan);
-                    }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'cell';
 
-                    const input = document.createElement('input');
-                    input.setAttribute('maxlength', '1');
-                    input.setAttribute('id', `input-${r}-${c}`);
-                    input.dataset.letter = gridData[r][c].letter;
-                    
-                    // Salto automático al escribir
-                    input.addEventListener('input', (e) => {
-                        if (e.target.value.length === 1) {
-                            findNextInput(r, c);
+                    if (gridData[r][c]) {
+                        cellDiv.className = 'cell active';
+                        
+                        if (gridData[r][c].numbers.length > 0) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'number';
+                            numSpan.innerText = gridData[r][c].numbers.join('/');
+                            cellDiv.appendChild(numSpan);
                         }
-                    });
 
-                    cellDiv.appendChild(input);
-                } else {
-                    // Celda bloqueada (Fondo negro estético acorde al diseño)
-                    cellDiv.style.backgroundColor = '#2c3e50'; 
+                        const input = document.createElement('input');
+                        input.setAttribute('maxlength', '1');
+                        input.setAttribute('id', 'input-' + r + '-' + c);
+                        input.dataset.letter = gridData[r][c].letter;
+                        
+                        // Función de salto automático de cuadro al escribir
+                        input.addEventListener('input', function(e) {
+                            if (e.target.value.length === 1) {
+                                let nextInput = document.getElementById('input-' + r + '-' + (c + 1)) || document.getElementById('input-' + (r + 1) + '-' + c);
+                                if (nextInput) nextInput.focus();
+                            }
+                        });
+
+                        cellDiv.appendChild(input);
+                    } else {
+                        cellDiv.style.backgroundColor = '#2c3e50'; 
+                    }
+                    gridContainer.appendChild(cellDiv);
                 }
-                gridContainer.appendChild(cellDiv);
             }
-        }
+        });
 
-        // Función para saltar automáticamente al siguiente cuadro disponible hacia la derecha o abajo
-        function findNextInput(r, c) {
-            let nextInput = document.getElementById(`input-${r}-${c+1}`) || document.getElementById(`input-${r+1}-${c}`);
-            if (nextInput) nextInput.focus();
-        }
-
-        // Verificar el estado de las respuestas y otorgar puntajes individuales por palabra
+        // Validar juego
         function verifyGame() {
             let score = 0;
 
-            words.forEach(w => {
+            words.forEach(function(w) {
                 let isWordCorrect = true;
                 let curRow = w.r;
                 let curCol = w.c;
 
                 for (let i = 0; i < w.word.length; i++) {
-                    const input = document.getElementById(`input-${curRow}-${curCol}`);
+                    const input = document.getElementById('input-' + curRow + '-' + curCol);
                     if (input) {
                         if (input.value.toUpperCase() !== w.word[i]) {
                             isWordCorrect = false;
-                            input.parentElement.classList.add('incorrect');
-                            input.parentElement.classList.remove('correct');
+                            input.parentElement.className = 'cell active incorrect';
                         } else {
                             if (!input.parentElement.classList.contains('incorrect')) {
-                                input.parentElement.classList.add('correct');
+                                input.parentElement.className = 'cell active correct';
                             }
                         }
                     }
-                    if (w.dir === "H") curCol++;
+                    if (w.dir === 'H') curCol++;
                     else curRow++;
                 }
 
                 if (isWordCorrect) score++;
             });
 
-            // Limpiar estilos cruzados (si una letra correcta choca con una incorrecta de otra palabra)
+            // Limpieza de estilos cruzados para letras correctas que se comparten
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const input = document.getElementById(`input-${r}-${c}`);
+                    const input = document.getElementById('input-' + r + '-' + c);
                     if (input && input.value.toUpperCase() === input.dataset.letter) {
                         input.parentElement.classList.remove('incorrect');
                         input.parentElement.classList.add('correct');
@@ -384,34 +383,28 @@
                 }
             }
 
-            showResult(score);
-        }
-
-        // Mostrar puntuación final
-        function showResult(score) {
+            // Mostrar el bloque de resultados
             const resultBox = document.getElementById('resultBox');
             resultBox.style.display = 'block';
-            
-            if(score === 10) {
+            if (score === 10) {
                 resultBox.style.backgroundColor = '#d4edda';
                 resultBox.style.color = '#155724';
-                resultBox.innerHTML = `¡Excelente! Puntuación perfecta: ${score}/10 puntos.`;
+                resultBox.innerHTML = '¡Excelente! Puntuación perfecta: ' + score + '/10 puntos.';
             } else {
                 resultBox.style.backgroundColor = '#fff3cd';
                 resultBox.style.color = '#856404';
-                resultBox.innerHTML = `Juego Terminado. Puntuación: ${score}/10 puntos. <br><small>Revisa las correcciones en el mapa.</small>`;
+                resultBox.innerHTML = 'Juego Terminado. Puntuación: ' + score + '/10 puntos. <br><small>Revisa las casillas en rojo.</small>';
             }
         }
 
-        // Función "Me rindo"
+        // Función de rendición automática
         function giveUp() {
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const input = document.getElementById(`input-${r}-${c}`);
+                    const input = document.getElementById('input-' + r + '-' + c);
                     if (input) {
                         input.value = input.dataset.letter;
-                        input.parentElement.classList.remove('incorrect');
-                        input.parentElement.classList.add('correct');
+                        input.parentElement.className = 'cell active correct';
                         input.disabled = true;
                     }
                 }
@@ -421,12 +414,11 @@
             resultBox.style.display = 'block';
             resultBox.style.backgroundColor = '#e2e3e5';
             resultBox.style.color = '#383d41';
-            resultBox.innerHTML = "Te has rendido. Respuestas reveladas. <br> Puntuación: 0/10 puntos.";
+            resultBox.innerHTML = 'Te has rendido. Respuestas correctas reveladas. <br> Puntuación: 0/10 puntos.';
 
-            // Modificar botón para reiniciar la página
             const giveupBtn = document.getElementById('giveupBtn');
-            giveupBtn.innerText = "Reiniciar Juego";
-            giveupBtn.style.backgroundColor = "#6c757d";
+            giveupBtn.innerText = 'Reiniciar Juego';
+            giveupBtn.style.backgroundColor = '#6c757d';
             giveupBtn.setAttribute('onclick', 'window.location.reload()');
         }
     </script>
