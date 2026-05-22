@@ -45,7 +45,7 @@
             height: fit-content;
         }
         .cell {
-            background-color: #2c3e50; /* Celdas ciegas por defecto */
+            background-color: #2c3e50; /* Fondo oscuro para celdas vacías */
             position: relative;
             width: var(--cell-size);
             height: var(--cell-size);
@@ -83,7 +83,7 @@
         .btn-giveup { background-color: var(--secondary-color); color: white; }
         .result-box {
             display: none; margin-top: 20px; padding: 15px; border-radius: 6px;
-            text-align: center; font-size: 1.1rem; font-weight: bold; width: 350px;
+            text-align: center; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 450px;
         }
         footer {
             margin-top: 40px; border-top: 1px solid #ccc; padding-top: 15px;
@@ -150,7 +150,7 @@
             { word: 'DIONISIACO', r: 1, c: 0, dir: 'V', num: 10 }
         ];
 
-        // Crear matriz vacía
+        // Crear matriz lógica vacía
         var gridData = [];
         for (var i = 0; i < rows; i++) {
             gridData[i] = [];
@@ -159,7 +159,7 @@
             }
         }
 
-        // Mapear palabras en la matriz
+        // Mapear palabras en la estructura matemática
         words.forEach(function(w) {
             var curRow = w.r;
             var curCol = w.c;
@@ -175,37 +175,38 @@
             }
         });
 
-        // FUNCIÓN DE RENDERIZADO INMEDIATA (Ejecución directa ultra-segura)
-        var gridContainer = document.getElementById('grid');
-        
-        for (var r = 0; r < rows; r++) {
-            for (var c = 0; c < cols; c++) {
-                var cellDiv = document.createElement('div');
-                cellDiv.className = 'cell';
+        // SOLUCIÓN AL ERROR DE CARGA: Ejecutar estrictamente cuando la ventana del navegador termine de cargar el HTML
+        window.onload = function() {
+            var gridContainer = document.getElementById('grid');
+            if (!gridContainer) return;
+            
+            for (var r = 0; r < rows; r++) {
+                for (var c = 0; c < cols; c++) {
+                    var cellDiv = document.createElement('div');
+                    cellDiv.className = 'cell';
 
-                if (gridData[r][c]) {
-                    cellDiv.className = 'cell active';
-                    
-                    if (gridData[r][c].numbers.length > 0) {
-                        var numSpan = document.createElement('span');
-                        numSpan.className = 'number';
-                        numSpan.innerText = gridData[r][c].numbers.join('/');
-                        cellDiv.appendChild(numSpan);
+                    if (gridData[r][c]) {
+                        cellDiv.className = 'cell active';
+                        
+                        if (gridData[r][c].numbers.length > 0) {
+                            var numSpan = document.createElement('span');
+                            numSpan.className = 'number';
+                            numSpan.innerText = gridData[r][c].numbers.join('/');
+                            cellDiv.appendChild(numSpan);
+                        }
+
+                        var input = document.createElement('input');
+                        input.setAttribute('maxlength', '1');
+                        input.setAttribute('id', 'input-' + r + '-' + c);
+                        input.dataset.letter = gridData[r][c].letter;
+                        input.setAttribute('oninput', 'moveFocus(' + r + ',' + c + ')');
+
+                        cellDiv.appendChild(input);
                     }
-
-                    var input = document.createElement('input');
-                    input.setAttribute('maxlength', '1');
-                    input.setAttribute('id', 'input-' + r + '-' + c);
-                    input.dataset.letter = gridData[r][c].letter;
-                    
-                    // Manejo del salto de enfoque
-                    input.setAttribute('oninput', 'moveFocus(' + r + ',' + c + ')');
-
-                    cellDiv.appendChild(input);
+                    gridContainer.appendChild(cellDiv);
                 }
-                gridContainer.appendChild(cellDiv);
             }
-        }
+        };
 
         function moveFocus(r, c) {
             var currentInput = document.getElementById('input-' + r + '-' + c);
@@ -215,54 +216,82 @@
             }
         }
 
-        function verifyGame() {
-            var score = 0;
+        // Función matemática exacta para evaluar el estado real del juego
+        function checkRealScore() {
+            var correctWordsCount = 0;
+
             words.forEach(function(w) {
                 var isWordCorrect = true;
+                var hasEmptyCell = false;
                 var curRow = w.r;
                 var curCol = w.c;
 
                 for (var i = 0; i < w.word.length; i++) {
                     var input = document.getElementById('input-' + curRow + '-' + curCol);
                     if (input) {
-                        if (input.value.toUpperCase() !== w.word[i]) {
+                        var val = input.value.trim().toUpperCase();
+                        if (val === '') {
+                            hasEmptyCell = true;
                             isWordCorrect = false;
-                            input.parentElement.className = 'cell active incorrect';
-                        } else {
-                            if (!input.parentElement.classList.contains('incorrect')) {
-                                input.parentElement.className = 'cell active correct';
-                            }
+                        } else if (val !== w.word[i]) {
+                            isWordCorrect = false;
                         }
                     }
                     if (w.dir === 'H') curCol++;
                     else curRow++;
                 }
-                if (isWordCorrect) score++;
+
+                // Una palabra solo da 1 punto si está completa y sin un solo error
+                if (isWordCorrect && !hasEmptyCell) {
+                    correctWordsCount++;
+                }
             });
 
-            // Re-validar intersecciones compartidas limpias
+            return correctWordsCount;
+        }
+
+        function verifyGame() {
+            // Colorear casillas individualmente según la letra puesta por el jugador
             for (var r = 0; r < rows; r++) {
                 for (var c = 0; c < cols; c++) {
                     var input = document.getElementById('input-' + r + '-' + c);
-                    if (input && input.value.toUpperCase() === input.dataset.letter) {
-                        input.parentElement.classList.remove('incorrect');
-                        input.parentElement.classList.add('correct');
+                    if (input) {
+                        var val = input.value.trim().toUpperCase();
+                        if (val === '') {
+                            input.parentElement.className = 'cell active'; // Restablecer si está vacío
+                        } else if (val === input.dataset.letter) {
+                            input.parentElement.className = 'cell active correct';
+                        } else {
+                            input.parentElement.className = 'cell active incorrect';
+                        }
                     }
                 }
             }
 
+            var finalScore = checkRealScore();
             var resultBox = document.getElementById('resultBox');
             resultBox.style.display = 'block';
-            if (score === 10) {
-                resultBox.style.backgroundColor = '#d4edda'; resultBox.style.color = '#155724';
-                resultBox.innerHTML = '¡Excelente! Puntuación perfecta: ' + score + '/10 puntos.';
+
+            if (finalScore === 10) {
+                resultBox.style.backgroundColor = '#d4edda';
+                resultBox.style.color = '#155724';
+                resultBox.innerHTML = '¡Excelente! Puntuación perfecta: ' + finalScore + '/10 respuestas correctas.';
+            } else if (finalScore > 0) {
+                resultBox.style.backgroundColor = '#fff3cd';
+                resultBox.style.color = '#856404';
+                resultBox.innerHTML = '¡Vas por buen camino! Tienes ' + finalScore + '/10 palabras completamente correctas. Revisa los cuadros rojos o vacíos.';
             } else {
-                resultBox.style.backgroundColor = '#fff3cd'; resultBox.style.color = '#856404';
-                resultBox.innerHTML = 'Juego Terminado. Puntuación: ' + score + '/10 puntos. <br><small>Revisa las casillas en rojo.</small>';
+                resultBox.style.backgroundColor = '#ffd2d2';
+                resultBox.style.color = '#d61c1c';
+                resultBox.innerHTML = 'Puntuación: 0/10 palabras completadas. Sigue intentándolo, recuerda verificar la ortografía en tus respuestas.';
             }
         }
 
         function giveUp() {
+            // Primero calculamos los puntos que hizo legalmente antes de rendirse
+            var scoreBeforeGivingUp = checkRealScore();
+
+            // Rellenar y corregir todo el mapa automáticamente
             for (var r = 0; r < rows; r++) {
                 for (var c = 0; c < cols; c++) {
                     var input = document.getElementById('input-' + r + '-' + c);
@@ -273,10 +302,12 @@
                     }
                 }
             }
+
             var resultBox = document.getElementById('resultBox');
             resultBox.style.display = 'block';
-            resultBox.style.backgroundColor = '#e2e3e5'; resultBox.style.color = '#383d41';
-            resultBox.innerHTML = 'Te has rendido. Respuestas correctas reveladas. <br> Puntuación: 0/10 puntos.';
+            resultBox.style.backgroundColor = '#e2e3e5';
+            resultBox.style.color = '#383d41';
+            resultBox.innerHTML = 'Te has rendido. Respuestas correctas reveladas en pantalla.<br>Lograste responder con éxito: <strong>' + scoreBeforeGivingUp + '/10 palabras</strong> antes de retirarte.';
 
             var giveupBtn = document.getElementById('giveupBtn');
             giveupBtn.innerText = 'Reiniciar Juego';
